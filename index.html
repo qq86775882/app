@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>接口测试页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        input, select, button {
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .response {
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .error {
+            border-left-color: #dc3545;
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .success {
+            border-left-color: #28a745;
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            background-color: #e9ecef;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            border-bottom: none;
+        }
+        .tab.active {
+            background-color: white;
+            border-bottom: 1px solid white;
+            margin-bottom: -1px;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>接口测试页面</h1>
+    
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('addUserConfig')">添加用户配置</div>
+        <div class="tab" onclick="switchTab('userECardQueryApi')">查询加油卡状态</div>
+        <div class="tab" onclick="switchTab('eCardRecharge')">加油卡充值</div>
+    </div>
+    
+    <!-- 添加用户配置 -->
+    <div id="addUserConfig" class="tab-content active">
+        <div class="container">
+            <h2>添加/更新用户配置</h2>
+            <form id="addUserConfigForm">
+                <input type="text" id="add_openId" placeholder="openId" required>
+                <input type="text" id="add_phone" placeholder="phone" required>
+                <input type="text" id="add_authorization" placeholder="Authorization" required>
+                <button type="submit">添加/更新配置</button>
+            </form>
+            <div id="addUserConfigResponse" class="response" style="display:none;"></div>
+        </div>
+    </div>
+    
+    <!-- 查询加油卡状态 -->
+    <div id="userECardQueryApi" class="tab-content">
+        <div class="container">
+            <h2>查询加油卡状态</h2>
+            <form id="userECardQueryApiForm">
+                <input type="text" id="query_cardNo" placeholder="cardNo" required>
+                <input type="text" id="query_cardCode" placeholder="cardCode" required>
+                <button type="submit">查询加油卡状态</button>
+            </form>
+            <div id="userECardQueryApiResponse" class="response" style="display:none;"></div>
+        </div>
+    </div>
+    
+    <!-- 加油卡充值 -->
+    <div id="eCardRecharge" class="tab-content">
+        <div class="container">
+            <h2>加油卡充值</h2>
+            <form id="eCardRechargeForm">
+                <input type="text" id="recharge_eCardCode" placeholder="eCardCode" required>
+                <button type="submit">充值加油卡</button>
+            </form>
+            <div id="eCardRechargeResponse" class="response" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script>
+        // 切换标签页
+        function switchTab(tabName) {
+            // 隐藏所有标签内容
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => content.classList.remove('active'));
+            
+            // 移除所有标签的激活状态
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // 显示选中的标签内容
+            document.getElementById(tabName).classList.add('active');
+            
+            // 激活选中的标签
+            event.target.classList.add('active');
+        }
+        
+        // 显示响应结果
+        function showResponse(elementId, data, isSuccess = true) {
+            const responseElement = document.getElementById(elementId);
+            responseElement.textContent = JSON.stringify(data, null, 2);
+            responseElement.style.display = 'block';
+            responseElement.className = 'response ' + (isSuccess ? 'success' : 'error');
+        }
+        
+        // 添加用户配置
+        document.getElementById('addUserConfigForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const data = {
+                openId: document.getElementById('add_openId').value,
+                phone: document.getElementById('add_phone').value,
+                Authorization: document.getElementById('add_authorization').value
+            };
+            
+            fetch('/addUserConfig', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                showResponse('addUserConfigResponse', data, data.code === 'success');
+            })
+            .catch(error => {
+                showResponse('addUserConfigResponse', {error: error.message}, false);
+            });
+        });
+        
+        // 查询加油卡状态
+        document.getElementById('userECardQueryApiForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const data = {
+                cardNo: document.getElementById('query_cardNo').value,
+                cardCode: document.getElementById('query_cardCode').value
+            };
+            
+            fetch('/userECardQueryApi', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                showResponse('userECardQueryApiResponse', data);
+            })
+            .catch(error => {
+                showResponse('userECardQueryApiResponse', {error: error.message}, false);
+            });
+        });
+        
+        // 加油卡充值
+        document.getElementById('eCardRechargeForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const data = {
+                eCardCode: document.getElementById('recharge_eCardCode').value
+            };
+            
+            fetch('/eCardRecharge', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                showResponse('eCardRechargeResponse', data);
+            })
+            .catch(error => {
+                showResponse('eCardRechargeResponse', {error: error.message}, false);
+            });
+        });
+    </script>
+</body>
+</html>
